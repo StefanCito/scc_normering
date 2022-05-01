@@ -2,6 +2,8 @@
 
 # Als de PCET wordt ingelezen schrijft het script een doorslag van de PCET-data weg waarmee de IRT2-normering uitgevoerd kan worden
 
+# Er wordt een Excelbestand weggeschreven met alle representativiteitsgegevens indien aanwezig
+
 # De packages openxlsx, reshape2, plyr en dplyr zijn noodzakelijk om dit script te kunnen draaien
 
 # Invoer ==================================================
@@ -26,8 +28,9 @@ options(warn = 1)
 # Inventariseer alle bestanden
 leerling_files = list.files(path = data_folder, pattern = '_leerlingen.csv')
 controle_files = list.files(path = data_folder, pattern = '_controle.csv')
+rep_files = list.files(path = data_folder, pattern = '_representiviteit.csv|_representativiteit.csv')
 onderdeel_files = list.files(path = data_folder, pattern = '.csv')
-onderdeel_files = onderdeel_files[!onderdeel_files %in% c(leerling_files, controle_files)]
+onderdeel_files = onderdeel_files[!onderdeel_files %in% c(leerling_files, controle_files, rep_files)]
 
 # Lees bestand met ankeritems
 anker_items = openxlsx::read.xlsx(anker_file, '1pl')[, c('item_id', 'onderdeel')]
@@ -35,6 +38,9 @@ ref_onderdelen = unique(anker_items$onderdeel)
 
 # Lees onderdeelgewichten
 onderdeelgewichten = openxlsx::read.xlsx(normeringsgegevens_file, 'onderdeelgewichten')
+
+wb = openxlsx::createWorkbook() # workbook voor representativiteit
+all_rep = NULL
 
 # Leerlingbestand leidend in vaststellen welke aanbieders we hebben
 for (leerling_file in leerling_files) {
@@ -85,13 +91,13 @@ for (leerling_file in leerling_files) {
     # Zijn alle leerlingen in de score opgenomen in de leerlingen?
     missing_leerlingen = score_data[!score_data$person_id %in% leerlingen$person_id, 'person_id']
     if (length(missing_leerlingen) > 0) {
-      warning(paste0('In onderdeelbestand ', onderdeel_file, ' zitten leerlingen die niet in het leerlingenbestand zitten, namelijk:\n', paste(missing_leerlingen, collapse = '\n')))
+      warning(paste0('In onderdeelbestand ', onderdeel_file, ' zitten ', length(missing_leerlingen), ' leerlingen die niet in het leerlingenbestand zitten, namelijk (eerste 20):\n', paste(head(missing_leerlingen, 20), collapse = '\n')))
     }
 
     # Zijn alle leerlingen uit leerlingen opgenomen in score?
     missing_leerlingen = leerlingen[!leerlingen$person_id %in% score_data$person_id, 'person_id']
     if (length(missing_leerlingen) > 0) {
-      warning(paste0('In het leerlingenbestand van ', aanbieder, ' zitten leerlingen die niet in onderdeelbestand ', onderdeel_file, ' zitten, namelijk:\n', paste(missing_leerlingen, collapse = '\n')))
+      warning(paste0('In het leerlingenbestand van ', aanbieder, ' zitten ', length(missing_leerlingen), ' leerlingen die niet in onderdeelbestand ', onderdeel_file, ' zitten, namelijk (eerste 20):\n', paste(head(missing_leerlingen, 20), collapse = '\n')))
     }
 
     # Maak long-format van wide-format data
@@ -155,6 +161,42 @@ for (leerling_file in leerling_files) {
     warning('Er waren items met een verschil in p-waarde in het controlebestand en in de data, namelijk:\n', paste(capture.output(print(p_diff, row.names = FALSE)), collapse = '\n'))
   }
 
+  # Kijk of er ook representativiteitsdata is
+  if (length(rep_files[grepl(aanbieder, rep_files)]) > 0) {
+
+    rep_data = read.csv2(file.path(data_folder, rep_files[grepl(aanbieder, rep_files)]))
+
+    if (!all(c('schooladvies', 'n') %in% colnames(rep_data))) {
+      warning(paste0('Niet alle verplichte kolomnamen zijn aanwezig in representativiteitsbestand ', aanbieder, '. Aanwezig zijn: ', paste(colnames(rep_data), collapse = ', ')))
+    } else if ('schooladvies' %in% colnames(leerlingen) ){
+
+       rep_data[rep_data[, 'schooladvies'] > 10 | rep_data[, 'schooladvies'] == 0, 'schooladvies'] = 'onbekend' # Hernoem rij met onbekend
+
+       # Bepaal verdeling aangeleverde data
+       schooladvies_data = plyr::ddply(leerlingen, 'schooladvies', function(x) {
+         return(data.frame('n_aangeleverd' = nrow(x)))
+       })
+   
+       schooladvies_data[schooladvies_data[, 'schooladvies'] > 10 | schooladvies_data[, 'schooladvies'] == 0, 'schooladvies'] = 'onbekend' # Hernoem rij met onbekend
+
+       # Maak dataframe met representativiteitsdata
+       rep_data = dplyr::full_join(rep_data, schooladvies_data, by = 'schooladvies')
+       rep_data = rep_data[order(match(rep_data$schooladvies, c(as.character(1:10), 'onbekend'))), ]
+       rep_data$perc_aangeleverd = round(prop.table(rep_data$n_aangeleverd) * 100.0, 2)
+
+       # Schrijf naar worksheet excel
+       openxlsx::addWorksheet(wb, aanbieder)
+       openxlsx::writeData(wb, aanbieder, rep_data, borders = 'none')
+
+       # Dataframe met overzicht alle aanbieders
+       all_rep = rbind(all_rep, data.frame('aanbieder' = aanbieder, 'n' = sum(rep_data$n), 'n_aangeleverd' = sum(rep_data$n_aangeleverd)))
+    }
+
+  } else {
+    warning('Er was geen representativiteitsbestand aanwezig')
+  }
+
+
   # Schrijf PCET-waarden weg voor IRT2-normering
   if (grepl('PCET', aanbieder)) {
 
@@ -183,4 +225,12 @@ for (leerling_file in leerling_files) {
 
     write.csv2(irt2_ref, 'pcet_irt2.csv', quote = FALSE, row.names = FALSE)
   }
+}
+
+if (length(all_rep) > 0) {
+  # Schrijf Excelbestand representativiteit
+  all_rep$perc_aangeleverd = round(all_rep$n_aangeleverd / all_rep$n * 100.0, 2)
+  openxlsx::addWorksheet(wb, 'overzicht')
+  openxlsx::writeData(wb, 'overzicht', all_rep, borders = 'none')
+  openxlsx::saveWorkbook(wb, 'representativiteit.xlsx', overwrite = TRUE)
 }
