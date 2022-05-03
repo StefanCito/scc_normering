@@ -113,6 +113,7 @@ for (onderdeel in referentieonderdelen) {
     if (!'item_id' %in% colnames(score_data)) {
       score_data = reshape2::melt(score_data, id.vars = 'person_id', value.name = 'item_score')
       colnames(score_data)[colnames(score_data) == 'variable'] = 'item_id'
+      score_data$item_id = as.character(score_data$item_id)
     }
 
     score_data = dplyr::inner_join(score_data, all_leerlingen[[aanbieder]], by = 'person_id')
