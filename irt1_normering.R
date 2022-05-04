@@ -59,7 +59,7 @@ options(width = 200)
 # Inventariseer alle bestanden
 leerling_files = list.files(path = data_folder, pattern = '_leerlingen.csv')
 onderdeel_files = list.files(path = data_folder, pattern = '.csv')
-onderdeel_files = onderdeel_files[!grepl('leerlingen|controle', onderdeel_files)]
+onderdeel_files = onderdeel_files[!grepl('leerlingen|controle|representiviteit|representativiteit', onderdeel_files)]
 noscore_files = list.files(path = data_folder, pattern = '_noscore.dat')
 
 # Lees parameters gezamenlijk anker in
@@ -133,6 +133,7 @@ for (leerling_file in leerling_files) {
     if (!'item_id' %in% colnames(score_data)) {
       score_data = reshape2::melt(score_data, id.vars = 'person_id', value.name = 'item_score')
       colnames(score_data)[colnames(score_data) == 'variable'] = 'item_id'
+      score_data$item_id = as.character(score_data$item_id)
     }
 
     # Verwijder missings
