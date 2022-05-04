@@ -73,6 +73,13 @@ if (!setequal(anker_parameters[['1pl']]$item_id, anker_parameters[['2pl']]$item_
   stop('Er is een mismatch tussen de items waarvoor parameters beschikbaar zijn in beide modellen')
 }
 
+items_off = read.csv2(items_off_file)
+
+# Check op items_off
+if (!all(items_off$actie %in% c('los', 'uit'))) {
+  warning(paste0('Niet alle acties in het bestand met uitgeschakelde items zijn gelijk aan "los" of "uit"'))
+}
+
 # Verplichte onderdelen
 verplichte_onderdelen = unique(anker_parameters[['1pl']]$onderdeel)
 
@@ -138,6 +145,14 @@ for (leerling_file in leerling_files) {
 
     # Verwijder missings
     score_data = score_data[!is.na(score_data$item_score) & score_data$item_score != 9, ]
+
+    # Verwijder uitgeschakelde ankeritems
+    score_data = score_data[!score_data[, 'item_id'] %in% items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'uit', 'item_id'], ]
+
+    # Koppel eventueel ook ankeritems los
+    for (item_id in items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'los', 'item_id']) {
+      score_data[score_data[, 'item_id'] == item_id, 'item_id'] = paste0('x', item_id, '_', aanbieder)
+    }
 
     # Voeg persoonsparameters toe en maak kalibratiedata
     score_data = dplyr::inner_join(score_data, leerlingen, by = 'person_id')
