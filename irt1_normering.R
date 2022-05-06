@@ -248,7 +248,8 @@ for (leerling_file in leerling_files) {
     for (refniveau in unique(ref_cesuren[ref_cesuren[, 'onderdeel'] == onderdeel, 'niveau'])) {
       for (model in c('1pl', '2pl')) {
         cesuur = ref_cesuren[ref_cesuren[, 'onderdeel'] == onderdeel & ref_cesuren[, 'niveau'] == refniveau, paste0('cesuur_', model)]
-        perc_behaald = round(nrow(all_abilities[all_abilities[, 'schooltype'] == 1 & !is.na(all_abilities[, paste0('theta_', model, '_', onderdeel)]) & all_abilities[, paste0('theta_', model, '_', onderdeel)] >= cesuur, ]) / nrow(all_abilities) * 100.0, 2)
+        perc_behaald = round(nrow(all_abilities[all_abilities[, 'schooltype'] == 1 & !is.na(all_abilities[, paste0('theta_', model, '_', onderdeel)]) & all_abilities[, paste0('theta_', model, '_', onderdeel)] >= cesuur, ]) / 
+                             nrow(all_abilities[all_abilities[, 'schooltype'] == 1 & !is.na(all_abilities[, paste0('theta_', model, '_', onderdeel)]), ]) * 100.0, 2)
         aanbieder_ref_behaald = rbind(aanbieder_ref_behaald, data.frame('model' = model, 'aanbieder' = aanbieder, 'onderdeel' = onderdeel, 'niveau' = refniveau, 'perc_behaald' = perc_behaald))
       }
     }
