@@ -34,6 +34,9 @@ resultaten_folder = 'dummy_resultaten'
 # Sampling factor voor IRT2-normering
 sampling = 10000
 
+# Vermenigvuldigingsfactoren aanbieders
+multiply = list('DUMMY1' = 1.4)
+
 # Code ====================================================
 
 options(warn = 1)
@@ -120,19 +123,18 @@ irt2_normering = function(schooladviezen, pcet_data, sampling) {
 # Voor de CET bepalen we de percentages behaalde percentages via de standaardscores, voor de private aanbieders uit de streefpercentages van de IRT2-normering
 all_schooladviezen = list() # Object voor schooladviezen private aanbieders
 all_toetsadviezen_irt2 = NULL
-cet_standaardscores = NULL # Vector om standaardscores CET bij te houden
+cet_standaardscores = list() # Object om standaardscores CET bij te houden
 for (aanbieder in aanbieders) {
 
   aanbieder_leerlingen = read.csv2(file.path(data_folder, leerling_files[grepl(aanbieder, leerling_files)]))
 
   if (grepl('CET', aanbieder)) {
     standaardscores = aanbieder_leerlingen[aanbieder_leerlingen[, 'schooltype'] == 1, 'standaardscore']
-    cet_standaardscores = c(cet_standaardscores, standaardscores)
-    cet_toetsadviezen = as.character(cut(standaardscores, c(-Inf, sort(toetsadvies_cesuren$cesuur_standaardscore), Inf), right = FALSE, labels = toetsadviezen))
-    cet_toetsadviezen = as.data.frame(table(cet_toetsadviezen), stringsAsFactors = FALSE)
-    colnames(cet_toetsadviezen) = c('toetsadvies', 'n')
-    cet_toetsadviezen$streefpercentage = prop.table(cet_toetsadviezen$n) * 100.0 # Is eigenlijk geen streefpercentage
-    all_toetsadviezen_irt2 = rbind(all_toetsadviezen_irt2, cet_toetsadviezen)
+    cet_standaardscores[[aanbieder]] = standaardscores
+    aanbieder_toetsadviezen = as.character(cut(standaardscores, c(-Inf, sort(toetsadvies_cesuren$cesuur_standaardscore), Inf), right = FALSE, labels = toetsadviezen))
+    aanbieder_toetsadviezen = as.data.frame(table(aanbieder_toetsadviezen), stringsAsFactors = FALSE)
+    colnames(aanbieder_toetsadviezen) = c('toetsadvies', 'n')
+    aanbieder_toetsadviezen$streefpercentage = prop.table(aanbieder_toetsadviezen$n) * 100.0 # Is eigenlijk geen streefpercentage
   } else {
 
     streefpercentages_irt2 = read.csv2(file.path(resultaten_folder, irt2_files[grepl(aanbieder, irt2_files)]))
@@ -141,10 +143,16 @@ for (aanbieder in aanbieders) {
     aanbieder_leerlingen$aanbieder = aanbieder
     all_schooladviezen[[aanbieder]] = aanbieder_leerlingen
 
-    toetsadviezen_irt2 = streefpercentages_irt2[, c('toetsadvies', 'streefpercentage')]
-    toetsadviezen_irt2$n = toetsadviezen_irt2$streefpercentage * 0.01 * nrow(aanbieder_leerlingen)
-    all_toetsadviezen_irt2 = rbind(all_toetsadviezen_irt2, toetsadviezen_irt2)
+    aanbieder_toetsadviezen = streefpercentages_irt2[, c('toetsadvies', 'streefpercentage')]
+    aanbieder_toetsadviezen$n = aanbieder_toetsadviezen$streefpercentage * 0.01 * nrow(aanbieder_leerlingen)
   }
+
+  # Vermenigvuldig aantallen als we in totaal nog meer data verwachten
+  if (aanbieder %in% names(multiply)) {
+    aanbieder_toetsadviezen$n = aanbieder_toetsadviezen$n * multiply[[aanbieder]]
+  }
+
+  all_toetsadviezen_irt2 = rbind(all_toetsadviezen_irt2, aanbieder_toetsadviezen)
 }
 
 all_schooladviezen = dplyr::bind_rows(all_schooladviezen)
@@ -183,12 +191,26 @@ if (nrow(overschrijdingen_irt2) > 0) {
 
       ss_toetsadviezen = irt2_normering(all_schooladviezen[!grepl('CET', all_schooladviezen[, 'aanbieder']), ], pcet_data, sampling)
 
-      # Bepaal ook toetsadviezen voor de totale populatie van alle toetsen van de CET met nieuwe standaardscoregrenzen
-      cet_toetsadviezen = as.character(cut(cet_standaardscores, c(-Inf, sort(coronacesuren_cet$cesuur_standaardscore), Inf), right = FALSE, labels = toetsadviezen))
-      cet_toetsadviezen = as.data.frame(table(cet_toetsadviezen), stringsAsFactors = FALSE)
-      colnames(cet_toetsadviezen) = c('toetsadvies', 'streefaantal_CET')
+      # Vermenigvuldig aantallen als we in totaal nog meer data verwachten
+      for (aanbieder in names(multiply)) {
+        if (paste0('streefaantal_', aanbieder) %in% colnames(ss_toetsadviezen)) {
+          ss_toetsadviezen[, paste0('streefaantal_', aanbieder)] = ss_toetsadviezen[, paste0('streefaantal_', aanbieder)] * multiply[[aanbieder]]
+        }
+      }
 
-      ss_toetsadviezen = dplyr::left_join(ss_toetsadviezen, cet_toetsadviezen, by = 'toetsadvies')
+      # Bepaal ook toetsadviezen voor de totale populatie van alle toetsen van de CET met nieuwe standaardscoregrenzen
+      for (aanbieder in names(cet_standaardscores)) {
+        cet_toetsadviezen = as.character(cut(cet_standaardscores[[aanbieder]], c(-Inf, sort(coronacesuren_cet$cesuur_standaardscore), Inf), right = FALSE, labels = toetsadviezen))
+        cet_toetsadviezen = as.data.frame(table(cet_toetsadviezen), stringsAsFactors = FALSE)
+        colnames(cet_toetsadviezen) = c('toetsadvies', paste0('streefaantal_', aanbieder))
+        if (aanbieder %in% names(multiply)) {
+          cet_toetsadviezen[, paste0('streefaantal_', aanbieder)] = cet_toetsadviezen[, paste0('streefaantal_', aanbieder)] * multiply[[aanbieder]]
+        }
+        ss_toetsadviezen = dplyr::left_join(ss_toetsadviezen, cet_toetsadviezen, by = 'toetsadvies')
+
+      }
+
+      # ss_toetsadviezen = dplyr::left_join(ss_toetsadviezen, cet_toetsadviezen, by = 'toetsadvies')
       ss_toetsadviezen$n = rowSums(ss_toetsadviezen[, grepl('streefaantal', colnames(ss_toetsadviezen))])
       ss_toetsadviezen$perc = prop.table(ss_toetsadviezen$n) * 100.0
       ss_toetsadviezen = ss_toetsadviezen[order(match(ss_toetsadviezen$toetsadvies, toetsadviezen)), ]
@@ -275,7 +297,7 @@ if (nrow(overschrijdingen_irt2) > 0) {
 
   # Bereken gecorrigeerde toetsadviezen CET op basis van nieuwe standaardscoregrenzen
   for (aanbieder in aanbieders[grepl('CET', aanbieders)]) {
-    cet_toetsadviezen = as.character(cut(cet_standaardscores, c(-Inf, sort(coronacesuren_cet$cesuur_coronacorrectie), Inf), right = FALSE, labels = toetsadviezen))
+    cet_toetsadviezen = as.character(cut(cet_standaardscores[[aanbieder]], c(-Inf, sort(coronacesuren_cet$cesuur_coronacorrectie), Inf), right = FALSE, labels = toetsadviezen))
     cet_toetsadviezen = as.data.frame(table(cet_toetsadviezen), stringsAsFactors = FALSE)
     colnames(cet_toetsadviezen) = c('toetsadvies', 'streefaantal')
     cet_toetsadviezen$streefpercentage = round(prop.table(cet_toetsadviezen$streefaantal) * 100.0, 2)
@@ -289,6 +311,11 @@ if (nrow(overschrijdingen_irt2) > 0) {
 
   # Samenvattingstabel vormgeven
   summary_toetsadviezen = reshape(summary_toetsadviezen, idvar = 'toetsadvies', timevar = 'aanbieder', direction = 'wide', sep = '_')
+  for (aanbieder in names(multiply)) {
+    if (paste0('streefaantal_', aanbieder) %in% colnames(summary_toetsadviezen)) {
+      summary_toetsadviezen[, paste0('streefaantal_', aanbieder)] = summary_toetsadviezen[, paste0('streefaantal_', aanbieder)] * multiply[[aanbieder]]
+    }
+  }
   summary_toetsadviezen$n_totaal = rowSums(summary_toetsadviezen[, grepl('streefaantal', colnames(summary_toetsadviezen))])
   summary_toetsadviezen$perc_covid = prop.table(summary_toetsadviezen$n_totaal) * 100.0
   summary_toetsadviezen$cum_perc_covid = cumsum(summary_toetsadviezen$perc_covid)
