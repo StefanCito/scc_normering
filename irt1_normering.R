@@ -152,6 +152,9 @@ for (leerling_file in leerling_files) {
     # Koppel eventueel ook ankeritems los
     for (item_id in items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'los', 'item_id']) {
       score_data[score_data[, 'item_id'] == item_id, 'item_id'] = paste0('x', item_id, '_', aanbieder)
+      if (item_id %in% noscore_items) {
+        noscore_items[noscore_items == item_id] = paste0('x', item_id, '_', aanbieder) # Zorg ook dat dit met de noscore-items goed gaat
+      }
     }
 
     # Voeg persoonsparameters toe en maak kalibratiedata
