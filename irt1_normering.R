@@ -42,6 +42,9 @@ populatie_aanbieders = c('PCET', 'ROUTE8')
 # Bestand met bestaande gezamenlijk ankerparameters, bevat een tabblad '1pl' en een tabblad '2pl'
 anker_file = 'dummy_resultaten/ankerparameters_2022.xlsx'
 
+# Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
+items_off_file = 'anker_off.csv'
+
 # Bestand met cesuren en onderdeelgewichten, bevat tabbladen ref_cesuren, toetsadvies_cesuren en onderdeelgewichten
 normeringsgegevens_file = 'normeringsgegevens_dummy.xlsx'
 
