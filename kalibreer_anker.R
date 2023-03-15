@@ -32,7 +32,7 @@
 data_folder = 'dummy_data'
 
 # Bestand met bestaande gezamenlijk ankerparameters, bevat een tabblad '1pl' en een tabblad '2pl'
-anker_file = 'ankerparameters_2021.xlsx'
+anker_file = 'ankerparameters_2022.xlsx'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
 items_off_file = 'anker_off.csv'
@@ -234,4 +234,4 @@ for (model in c('1pl', '2pl')) {
   openxlsx::writeData(wb_anker, model, rbind(existing_anker, nieuw_anker[nieuw_anker$n_aanbieder > 1, colnames(existing_anker)]), headerStyle = header_style, borders = 'none', withFilter = TRUE)
 }
 openxlsx::saveWorkbook(wb, file.path(output_folder, 'ankerkalibratie_itemparameters.xlsx'), overwrite = TRUE)
-openxlsx::saveWorkbook(wb_anker, file.path(output_folder, 'ankerparameters_2022.xlsx'), overwrite = TRUE)
+openxlsx::saveWorkbook(wb_anker, file.path(output_folder, 'ankerparameters_2023.xlsx'), overwrite = TRUE)

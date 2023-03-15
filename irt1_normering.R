@@ -40,7 +40,7 @@ data_folder = 'dummy_data'
 populatie_aanbieders = c('PCET', 'ROUTE8')
 
 # Bestand met bestaande gezamenlijk ankerparameters, bevat een tabblad '1pl' en een tabblad '2pl'
-anker_file = 'dummy_resultaten/ankerparameters_2022.xlsx'
+anker_file = 'dummy_resultaten/ankerparameters_2023.xlsx'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
 items_off_file = 'anker_off.csv'
