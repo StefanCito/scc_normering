@@ -38,7 +38,7 @@ anker_file = 'ankerparameters_2022.xlsx'
 items_off_file = 'anker_off.csv'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
-populatie_aanbieders = c('PCET', 'ROUTE8')
+populatie_aanbieders = c('PCET')
 
 # Folder waar output naar weggeschreven moet worden
 output_folder = 'dummy_resultaten'

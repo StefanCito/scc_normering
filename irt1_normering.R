@@ -37,7 +37,7 @@
 data_folder = 'dummy_data'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
-populatie_aanbieders = c('PCET', 'ROUTE8')
+populatie_aanbieders = c('PCET')
 
 # Bestand met bestaande gezamenlijk ankerparameters, bevat een tabblad '1pl' en een tabblad '2pl'
 anker_file = 'dummy_resultaten/ankerparameters_2023.xlsx'
@@ -50,9 +50,6 @@ normeringsgegevens_file = 'normeringsgegevens_dummy.xlsx'
 
 # Output folder
 output_folder = 'dummy_resultaten'
-
-# Populatiemap voor route8, welke populatie is welke toets?
-route8_map = list('ROUTE8' = 1, 'ROUTE8PLUS' = 2)
 
 # Code ====================================================
 
@@ -263,64 +260,49 @@ for (leerling_file in leerling_files) {
 
   aanbieder_ref_behaald = reshape(aanbieder_ref_behaald, idvar = c('aanbieder', 'onderdeel', 'niveau'), timevar = 'model', direction = 'wide', sep = '_')
 
-  # Route8 opsplitsen in 2 toetsen voor GLV-berekening
-  if (aanbieder == 'ROUTE8') {
-    toetsen = names(route8_map)
-  } else {
-    toetsen = aanbieder
-  }
+  # Bepaal onderdeelgewichten voor deze aanbieder (named vector)
+  aanbieder_gewichten = unlist(onderdeelgewichten[onderdeelgewichten[, 'toets'] == aanbieder, !colnames(onderdeelgewichten) %in% c('toets', 'totaal')])
+  aanbieder_gewichten = aanbieder_gewichten[!is.na(aanbieder_gewichten)]
 
   # Bereken GLV
   all_glv = list('1pl' = list(), '2pl' = list())
-  for (toets in toetsen) {
 
-    # Bepaal onderdeelgewichten voor deze aanbieder (named vector)
-    aanbieder_gewichten = unlist(onderdeelgewichten[onderdeelgewichten[, 'toets'] == toets, !colnames(onderdeelgewichten) %in% c('toets', 'totaal')])
-    aanbieder_gewichten = aanbieder_gewichten[!is.na(aanbieder_gewichten)]
+  for (model in c('1pl', '2pl')) {
 
-    for (model in c('1pl', '2pl')) {
+    glv_data = all_abilities[, c('person_id', 'schooltype', 'populatie', paste0('theta_', model, '_', names(aanbieder_gewichten)))]
 
-      glv_data = all_abilities[, c('person_id', 'schooltype', 'populatie', paste0('theta_', model, '_', names(aanbieder_gewichten)))]
-      # Hou rekening met route8
-      if (aanbieder == 'ROUTE8') {
-        glv_data = glv_data[glv_data[, 'populatie'] == route8_map[[toets]], ]
-      }
+    # Bepaal correlatiematrix tussen de verschillende onderdelen
+    cor_matrix = cor(all_abilities[, paste0('theta_', model, '_', names(aanbieder_gewichten))], use = 'complete.obs')
+    colnames(cor_matrix) = gsub('theta_|1pl_|2pl_', '', colnames(cor_matrix))
+    rownames(cor_matrix) = gsub('theta_|1pl_|2pl_', '', rownames(cor_matrix))
+    if (any(cor_matrix < 0.4)) {
+      warning(paste0('Er waren correlaties tussen onderdelen lager dan 0.4 bij ', aanbieder, ' in het ', model, ' model.'))
+    } 
+    openxlsx::writeData(wb, aanbieder, data.frame('x' = paste0(aanbieder, ' ', model)), startRow = wb_rows, borders = 'none', colNames = FALSE)
+    openxlsx::addStyle(wb, aanbieder, rows = wb_rows, cols = 1, style = openxlsx::createStyle(textDecoration = 'bold'))
+    openxlsx::writeData(wb, aanbieder, as.data.frame(cor_matrix), startRow = wb_rows + 1, borders = 'none', rowNames = TRUE)
+    wb_rows = wb_rows + nrow(cor_matrix) + 3
 
-      # Bepaal correlatiematrix tussen de verschillende onderdelen
-      cor_matrix = cor(all_abilities[, paste0('theta_', model, '_', names(aanbieder_gewichten))], use = 'complete.obs')
-      colnames(cor_matrix) = gsub('theta_|1pl_|2pl_', '', colnames(cor_matrix))
-      rownames(cor_matrix) = gsub('theta_|1pl_|2pl_', '', rownames(cor_matrix))
-      if (any(cor_matrix < 0.4)) {
-        warning(paste0('Er waren correlaties tussen onderdelen lager dan 0.4 bij ', toets, ' in het ', model, ' model.'))
-      } 
-      openxlsx::writeData(wb, aanbieder, data.frame('x' = paste0(toets, ' ', model)), startRow = wb_rows, borders = 'none', colNames = FALSE)
-      openxlsx::addStyle(wb, aanbieder, rows = wb_rows, cols = 1, style = openxlsx::createStyle(textDecoration = 'bold'))
-      openxlsx::writeData(wb, aanbieder, as.data.frame(cor_matrix), startRow = wb_rows + 1, borders = 'none', rowNames = TRUE)
-      wb_rows = wb_rows + nrow(cor_matrix) + 3
-
-      # correlaties[[model]][[toets]] = cor_matrix
-
-      # Kijk of er leerlingen zijn met ontbrekende onderdelen
-      na_leerlingen = glv_data[!complete.cases(glv_data[, paste0('theta_', model, '_', names(aanbieder_gewichten))]), !colnames(glv_data) %in% c('schooltype', 'populatie')]
-      if (nrow(na_leerlingen) > 0) {
-        warning(paste0('Er waren ', nrow(na_leerlingen), ' leerlingen bij ', toets, ' met een of meer onderdelen zonder vaardigheid, namelijk:\n', paste(capture.output(print(na_leerlingen, row.names = FALSE)), collapse = '\n')))
-        glv_data = glv_data[!glv_data[, 'person_id'] %in% na_leerlingen$person_id, ]
-      }
-
-      # Bereken gemiddelden
-      theta_means = colMeans(glv_data[glv_data[, 'schooltype'] == 1, paste0('theta_', model, '_', names(aanbieder_gewichten))]) # Schaling bepalen we alleen op regulier BO
-      mean_verplicht = mean(theta_means[paste0('theta_', model, '_', verplichte_onderdelen)]) # Gemiddelde van verplichte onderdelen samen
-
-      # Voer schaling uit voor optionele onderdelen (stel gemiddelde gelijk aan gemiddelde theta verplichte onderdelen)
-      for (optioneel_onderdeel in names(aanbieder_gewichten)[!names(aanbieder_gewichten) %in% verplichte_onderdelen]) {
-        glv_data[, paste0('theta_', model, '_', optioneel_onderdeel)] = glv_data[, paste0('theta_', model, '_', optioneel_onderdeel)] + (mean_verplicht - theta_means[paste0('theta_', model, '_', optioneel_onderdeel)])
-      }
-
-      # Bereken GLV
-      glv_data[, paste0('glv_', model)] = apply(glv_data[, paste0('theta_', model, '_', names(aanbieder_gewichten))], 1, weighted.mean, aanbieder_gewichten)
-
-      all_glv[[model]][[length(all_glv[[model]]) + 1]] = glv_data[, c('person_id', paste0('glv_', model))]
+    # Kijk of er leerlingen zijn met ontbrekende onderdelen
+    na_leerlingen = glv_data[!complete.cases(glv_data[, paste0('theta_', model, '_', names(aanbieder_gewichten))]), !colnames(glv_data) %in% c('schooltype', 'populatie')]
+    if (nrow(na_leerlingen) > 0) {
+      warning(paste0('Er waren ', nrow(na_leerlingen), ' leerlingen bij ', aanbieder, ' met een of meer onderdelen zonder vaardigheid, namelijk:\n', paste(capture.output(print(na_leerlingen, row.names = FALSE)), collapse = '\n')))
+      glv_data = glv_data[!glv_data[, 'person_id'] %in% na_leerlingen$person_id, ]
     }
+
+    # Bereken gemiddelden
+    theta_means = colMeans(glv_data[glv_data[, 'schooltype'] == 1, paste0('theta_', model, '_', names(aanbieder_gewichten))]) # Schaling bepalen we alleen op regulier BO
+    mean_verplicht = mean(theta_means[paste0('theta_', model, '_', verplichte_onderdelen)]) # Gemiddelde van verplichte onderdelen samen
+
+    # Voer schaling uit voor optionele onderdelen (stel gemiddelde gelijk aan gemiddelde theta verplichte onderdelen)
+    for (optioneel_onderdeel in names(aanbieder_gewichten)[!names(aanbieder_gewichten) %in% verplichte_onderdelen]) {
+      glv_data[, paste0('theta_', model, '_', optioneel_onderdeel)] = glv_data[, paste0('theta_', model, '_', optioneel_onderdeel)] + (mean_verplicht - theta_means[paste0('theta_', model, '_', optioneel_onderdeel)])
+    }
+
+    # Bereken GLV
+    glv_data[, paste0('glv_', model)] = apply(glv_data[, paste0('theta_', model, '_', names(aanbieder_gewichten))], 1, weighted.mean, aanbieder_gewichten)
+
+    all_glv[[model]][[length(all_glv[[model]]) + 1]] = glv_data[, c('person_id', paste0('glv_', model))]
   }
 
   # Voeg GLVs bij abilities, bepaal pro/bb-correctie, bereken toetsadviezen en bereken percentages behaalde toetsadviezen
