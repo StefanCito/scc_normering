@@ -3,7 +3,7 @@
 Code om de landelijke normering uit te voeren, inclusief een dummy-dataset.
 
 De verschillende analysescripts worden in deze volgorde uitgevoerd:
-1. `controle.R` - controle op datakwaliteit en consistentie
+1. `controle.R` - controle op datakwaliteit en consistentie, schrijft eventueel PCET-data weg voor IRT2-normering
 2. `kalibreer_anker.R` - kalibratie nieuwe gezamenlijk ankerparameters
 3. `irt1_normering.R` - uitvoeren IRT1-normering
 4. `irt2_normering.R` - uitvoeren IRT2-normering
