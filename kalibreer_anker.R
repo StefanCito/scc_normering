@@ -160,7 +160,6 @@ for (onderdeel in referentieonderdelen) {
   message(paste0('Bezig met 2pl-kalibratie'))
 
   # Daadwerkelijke kalibratie
-  fixed_parameters = anker_parameters[anker_parameters[, 'onderdeel'] == onderdeel, ]
   cal = dexterMML::fit_2pl(onderdeel_scores, fixed_param = fixed_parameters, group = 'populatie')
  
   # Populatieparameters
