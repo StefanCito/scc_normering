@@ -1,7 +1,5 @@
 # Dit script voert controles uit op de aangeleverde data voor de normering
 
-# Als de PCET wordt ingelezen schrijft het script een doorslag van de PCET-data weg waarmee de IRT2-normering uitgevoerd kan worden
-
 # Er wordt een Excelbestand weggeschreven met alle representativiteitsgegevens indien aanwezig
 
 # De packages openxlsx, reshape2, plyr en dplyr zijn noodzakelijk om dit script te kunnen draaien
@@ -16,7 +14,7 @@
 data_folder = 'dummy_data'
 
 # Bestand met bestaande gezamenlijk ankerparameters
-anker_file = 'ankerparameters_2022.xlsx'
+anker_file = 'ankerparameters_2023.csv'
 
 # Bestand met onderdeelgewichten, bevat tabbladen onderdeelgewichten
 normeringsgegevens_file = 'normeringsgegevens_dummy.xlsx'
@@ -33,11 +31,8 @@ onderdeel_files = list.files(path = data_folder, pattern = '.csv')
 onderdeel_files = onderdeel_files[!onderdeel_files %in% c(leerling_files, controle_files, rep_files)]
 
 # Lees bestand met ankeritems
-anker_items = openxlsx::read.xlsx(anker_file, '1pl')[, c('item_id', 'onderdeel')]
+anker_items = read.csv2(anker_file)[, c('item_id', 'onderdeel')]
 ref_onderdelen = unique(anker_items$onderdeel)
-
-# Lees onderdeelgewichten
-onderdeelgewichten = openxlsx::read.xlsx(normeringsgegevens_file, 'onderdeelgewichten')
 
 wb = openxlsx::createWorkbook() # workbook voor representativiteit
 all_rep = NULL
@@ -68,14 +63,10 @@ for (leerling_file in leerling_files) {
     warning(paste0('Niet alle schooltypes in het leerlingbestand zijn toegestane waarden. Aanwezig zijn: ', paste(unique(leerlingen$schooltype), collapse = ', ')))
   }
 
-  # Welke onderdelen verwachten we op basis van de onderdeelgewichten?
-  exp_onderdelen = unlist(onderdeelgewichten[grepl(paste0('^', aanbieder), onderdeelgewichten$toets), !colnames(onderdeelgewichten) %in% c('toets', 'totaal')])
-  exp_onderdelen = unique(gsub('[[:digit:]]+', '', names(exp_onderdelen[!is.na(exp_onderdelen)])))
-
   # Kijk of er scorebestanden zijn van alle onderdelen die verwacht worden
   aanbieder_onderdelen = gsub(paste0(aanbieder, '_|\\.csv'), '', onderdeel_files[grepl(aanbieder, onderdeel_files)])
-  if (!all(exp_onderdelen %in% aanbieder_onderdelen)) {
-    warning(paste0('De volgende onderdelen worden verwacht bij ', aanbieder, ', maar is geen scorebestand van gevonden: ', paste(exp_onderdelen[!exp_onderdelen %in% aanbieder_onderdelen])))
+  if (!all(ref_onderdelen %in% aanbieder_onderdelen)) {
+    warning(paste0('De volgende onderdelen worden verwacht bij ', aanbieder, ', maar is geen scorebestand van gevonden: ', paste(ref_onderdelen[!ref_onderdelen %in% aanbieder_onderdelen])))
   }
 
   p_values_data = list()
@@ -194,36 +185,6 @@ for (leerling_file in leerling_files) {
 
   } else {
     warning('Er was geen representativiteitsbestand aanwezig')
-  }
-
-
-  # Schrijf PCET-waarden weg voor IRT2-normering
-  if (grepl('PCET', aanbieder)) {
-
-    kolommen_pcet = c('toetsadvies', 'standaardscore', 'LEZEN1F', 'LEZEN2F', 'TAAL1F', 'TAAL2F', 'REKENEN1F', 'REKENEN1S')
-
-    # Controleer aanwezigheid kolommen speciaal voor PCET
-    if (!all(c(kolommen_pcet) %in% colnames(leerlingen))) {
-      warning(paste0('Niet alle speciale kolomnamen zijn aanwezig in leerlingbestand PCET. Aanwezig zijn: ', paste(colnames(leerlingen), collapse = ', ')))
-    }
-
-    # Alleen leerlingen met schooladvies
-    irt2_ref = leerlingen[leerlingen[, 'schooladvies'] %in% 1:10 & leerlingen[, 'schooltype'] == 1, c('schooladvies', kolommen_pcet)]
-
-    # Controleer of waarden kloppen?
-    if (!all(1:10 %in% irt2_ref$schooladvies)) {
-      warning('Niet alle schooladviezen kwamen voor in het leerlingbestand van de PCET.')
-    }
-    if (!all(1:6 %in% irt2_ref$toetsadvies)) {
-      warning('Niet alle toetsadviezen kwamen voor onder leerlingen die een schooladvies hebben in de PCET.')
-    }
-    for (ref_kolom in kolommen_pcet[!kolommen_pcet %in% c('standaardscore', 'toetsadvies')]) {
-      if (!all(c(0,1) %in% irt2_ref[, ref_kolom])) {
-        warning(paste0('Niet alle waarden in de kolom ', ref_kolom, ' in het leerlingbestand van de PCET hebben waarde 0 of 1.'))
-      }
-    }
-
-    write.csv2(irt2_ref, 'pcet_irt2.csv', quote = FALSE, row.names = FALSE)
   }
 }
 
