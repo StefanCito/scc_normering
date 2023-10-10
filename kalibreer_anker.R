@@ -1,5 +1,5 @@
 # Dit script kalibreert nieuwe ankeritems bij op de schaal van het bestaande gezamenlijk anker
-# Data van alle aanbieders is noodzakelijk als input
+# Data van alle toetsaanbieders is noodzakelijk als input
 
 # Aangenomen wordt dat met het controlescript controle.R gecontroleerd is of de juiste bestanden aanwezig zijn en dat deze intern consistent zijn
 
@@ -10,15 +10,15 @@
 
 # Verder worden de volgende bestanden met globale gegevens weggeschreven:
 # - (MML) populatieparameters van alle aanbieders
-#   Bestand met de populatieparameters van ieder onderdeel uit de grote ankerkalibraties in beide modellen
+#   Bestand met de populatieparameters van ieder onderdeel uit de grote ankerkalibratie
 #   Bestandsnaam ankerkalibratie_populaties.csv
 # - itemparameters van alle items
-#   Bestand met alle gekalibreerde itemparameters, van ieder onderdeel in beide modellen
+#   Bestand met alle gekalibreerde itemparameters van alle onderdelen
 #   Bestandsnaam ankerkalibratie_itemparameters.xlsx
 # - itemparameters van het gezamenlijk anker
 #   Bestand met parameters van bestaande gezamenlijk ankeritems aangevuld met nieuw bijgekalibreerde gezamenlijk ankeritems
-#   Kan gebruikt worden als input voor kalibraties per aanbieder
-#   Bestandsnaam ankerparameters_2022.xlsx
+#   Kan gebruikt worden als input voor kalibraties per aanbieder (zie irt1_normering.R)
+#   Bestandsnaam ankerparameters_2024.xlsx
 
 # De volgende R-packages worden gebruikt in dit script:
 # dexterMML (https://github.com/dexter-psychometrics/dexterMML), openxlsx, reshape2, plyr en dplyr
@@ -31,14 +31,14 @@
 # - Scoredata per onderdeel (TOETS_ONDERDEEL.csv)
 data_folder = 'dummy_data'
 
-# Bestand met bestaande gezamenlijk ankerparameters, bevat een tabblad '1pl' en een tabblad '2pl'
-anker_file = 'ankerparameters_2022.xlsx'
+# Bestand met bestaande gezamenlijk ankerparameters
+anker_file = 'ankerparameters_2023.csv'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
 items_off_file = 'anker_off.csv'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
-populatie_aanbieders = c('PCET')
+populatie_aanbieders = NULL
 
 # Folder waar output naar weggeschreven moet worden
 output_folder = 'dummy_resultaten'
@@ -60,17 +60,9 @@ if (!all(items_off$actie %in% c('los', 'uit'))) {
 }
 
 # Lees parameters gezamenlijk anker in
-anker_parameters = list()
-for (model in c('1pl', '2pl')) {
-  anker_parameters[[model]] = openxlsx::read.xlsx(anker_file, model)
-}
+anker_parameters = read.csv2(anker_file)
 
-# Check op gelijkheid items voor beide modellen
-if (!setequal(anker_parameters[['1pl']]$item_id, anker_parameters[['2pl']]$item_id)) {
-  stop('Er is een mismatch tussen de items waarvoor parameters beschikbaar zijn in beide modellen')
-}
-
-referentieonderdelen = unique(anker_parameters[['1pl']]$onderdeel)
+referentieonderdelen = unique(anker_parameters$onderdeel)
 
 # Lees leerlingdata in
 all_leerlingen = list()
@@ -95,7 +87,7 @@ message(paste0('Leerlingdata van de volgende aanbieders is ingelezen:\n', paste(
 
 all_removed_items = list()
 all_populations = list()
-all_parameters = list('1pl' = list(), '2pl' = list())
+all_parameters = list()
 # Loop over ieder onderdeel om de kalibratie uit te voeren
 for (onderdeel in referentieonderdelen) {
 
@@ -152,7 +144,7 @@ for (onderdeel in referentieonderdelen) {
   message('Bezig met initiele 2pl-kalibratie')
 
   # Initiele 2pl-kalibratie om slechte items eruit te gooien
-  fixed_parameters = anker_parameters[['2pl']][anker_parameters[['2pl']][, 'onderdeel'] == onderdeel, c('item_id', 'item_score', 'alpha', 'beta')]
+  fixed_parameters = anker_parameters[anker_parameters[, 'onderdeel'] == onderdeel, c('item_id', 'item_score', 'alpha', 'beta')]
   cal = dexterMML::fit_2pl(onderdeel_scores, fixed_param = fixed_parameters, group = 'populatie')
 
   parameters = as.data.frame(coef(cal))
@@ -165,33 +157,23 @@ for (onderdeel in referentieonderdelen) {
     onderdeel_scores = onderdeel_scores[!onderdeel_scores[, 'item_id'] %in% remove_items$item_id, ] # Verwijder items
   }
 
-  # Loop over modellen om daadwerkelijke kalibratie uit te voeren
-  for (model in c('1pl', '2pl')) {
+  message(paste0('Bezig met 2pl-kalibratie'))
 
-    message(paste0('Bezig met ', model, '-kalibratie'))
-
-    fixed_parameters = anker_parameters[[model]][anker_parameters[[model]][, 'onderdeel'] == onderdeel, ]
-
-    # Kalibraties
-    if (model == '1pl') {
-      cal = dexterMML::fit_1pl(onderdeel_scores, fixed_param = fixed_parameters, group = 'populatie')
-    } else {
-      cal = dexterMML::fit_2pl(onderdeel_scores, fixed_param = fixed_parameters, group = 'populatie')
-    }
-
-    # Populatieparameters
-    populations = as.data.frame(coef(cal, 'populations'))
-    populations$model = model
-    populations$onderdeel = onderdeel
-    populations$aanbieder = sapply(populations$populatie, function(x) strsplit(x, '_')[[1]][1])
-    all_populations[[length(all_populations) + 1]] = populations
-
-    # Itemparameters
-    parameters = as.data.frame(coef(cal))
-    parameters$onderdeel = onderdeel
-    parameters = dplyr::left_join(parameters, score_categories[, c('item_id', 'aanbieder')], by = 'item_id')
-    all_parameters[[model]][[onderdeel]] = parameters
-  }
+  # Daadwerkelijke kalibratie
+  fixed_parameters = anker_parameters[anker_parameters[, 'onderdeel'] == onderdeel, ]
+  cal = dexterMML::fit_2pl(onderdeel_scores, fixed_param = fixed_parameters, group = 'populatie')
+ 
+  # Populatieparameters
+  populations = as.data.frame(coef(cal, 'populations'))
+  populations$onderdeel = onderdeel
+  populations$aanbieder = sapply(populations$populatie, function(x) strsplit(x, '_')[[1]][1])
+  all_populations[[length(all_populations) + 1]] = populations
+ 
+  # Itemparameters
+  parameters = as.data.frame(coef(cal))
+  parameters$onderdeel = onderdeel
+  parameters = dplyr::left_join(parameters, score_categories[, c('item_id', 'aanbieder')], by = 'item_id')
+  all_parameters[[onderdeel]] = parameters
 }
 
 # Schrijf verwijderde items weg per aanbieder
@@ -207,31 +189,21 @@ for (aanbieder in names(all_leerlingen)) {
 
 # Schrijf totale populatiegegevens weg
 all_populations = dplyr::bind_rows(all_populations)
-write.csv2(all_populations, file.path(output_folder, 'ankerkalibratie_populaties.csv'), row.names = FALSE, quote = FALSE)
+write.csv2(dplyr::mutate_if(all_populations, is.numeric, round, digits = 5), file.path(output_folder, 'ankerkalibratie_populaties.csv'), row.names = FALSE, quote = FALSE)
 
-# Schrijf excelbestanden weg met itemparameters
-header_style = openxlsx::createStyle(fontColour = 'white', halign = 'left', fgFill = '#0079AB', textDecoration = 'bold')
-wb = openxlsx::createWorkbook() # Alle itemparameters (diagnostisch)
-wb_anker = openxlsx::createWorkbook() # Alleen gezamenlijk anker
-for (model in c('1pl', '2pl')) {
-  parameters = dplyr::bind_rows(all_parameters[[model]])
-  openxlsx::addWorksheet(wb, model)
-  openxlsx::writeData(wb, model, parameters, headerStyle = header_style, borders = 'none', withFilter = TRUE)
+# Schrijf bestanden weg met itemparameters
+parameters = dplyr::bind_rows(all_parameters)
+write.csv2(parameters, file.path(output_folder, 'ankerkalibratie_itemparameters.csv'), row.names = FALSE, quote = FALSE) # Alle itemparameters (diagnostisch)
 
-  existing_anker = anker_parameters[[model]]
+nieuw_anker = parameters[grepl('^Ank', parameters[, 'item_id']) & !parameters[, 'item_id'] %in% anker_parameters$item_id, ]
+nieuw_anker$n_aanbieder = stringr::str_count(nieuw_anker$aanbieder, ';') + 1
 
-  nieuw_anker = parameters[grepl('^Ank', parameters[, 'item_id']) & !parameters[, 'item_id'] %in% existing_anker$item_id, ]
-  nieuw_anker$n_aanbieder = stringr::str_count(nieuw_anker$aanbieder, ';') + 1
-
-  if (model == '2pl') {
-    message(paste0('De volgende nieuwe gezamenlijk ankeritems zijn gevonden:\n', paste(nieuw_anker$item_id, collapse = '\n')))
-    if (nrow(nieuw_anker[nieuw_anker$n_aanbieder == 1, ]) > 0) {
-      warning(paste0('Er waren gezamenlijk ankeritems die maar bij 1 aanbieder zijn afgenomen, deze zullen genegeerd worden:\n', paste(nieuw_anker[nieuw_anker$n_aanbieder == 1, 'item_id'], collapse = '\n')))
-    }
-  }
-
-  openxlsx::addWorksheet(wb_anker, model)
-  openxlsx::writeData(wb_anker, model, rbind(existing_anker, nieuw_anker[nieuw_anker$n_aanbieder > 1, colnames(existing_anker)]), headerStyle = header_style, borders = 'none', withFilter = TRUE)
+if (nrow(nieuw_anker) > 0) {
+  message(paste0('De volgende nieuwe gezamenlijk ankeritems zijn gevonden:\n', paste(nieuw_anker$item_id, collapse = '\n')))
 }
-openxlsx::saveWorkbook(wb, file.path(output_folder, 'ankerkalibratie_itemparameters.xlsx'), overwrite = TRUE)
-openxlsx::saveWorkbook(wb_anker, file.path(output_folder, 'ankerparameters_2023.xlsx'), overwrite = TRUE)
+
+if (nrow(nieuw_anker[nieuw_anker$n_aanbieder == 1, ]) > 0) {
+  warning(paste0('Er waren gezamenlijk ankeritems die maar bij 1 aanbieder zijn afgenomen, deze zullen genegeerd worden:\n', paste(nieuw_anker[nieuw_anker$n_aanbieder == 1, 'item_id'], collapse = '\n')))
+}
+
+write.csv2(rbind(anker_parameters, nieuw_anker[nieuw_anker$n_aanbieder > 1, colnames(anker_parameters)]), file.path(output_folder, 'ankerparameters_2024.csv'), row.names = FALSE, quote = FALSE) # Alleen gezamenlijk anker
