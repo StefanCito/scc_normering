@@ -208,4 +208,4 @@ if (nrow(nieuw_anker[nieuw_anker$n_aanbieder == 1, ]) > 0) {
   warning(paste0('Er waren gezamenlijk ankeritems die maar bij 1 aanbieder zijn afgenomen, deze zullen genegeerd worden:\n', paste(nieuw_anker[nieuw_anker$n_aanbieder == 1, 'item_id'], collapse = '\n')))
 }
 
-write.csv2(rbind(anker_parameters, nieuw_anker[nieuw_anker$n_aanbieder > 1, colnames(anker_parameters)]), file.path(output_folder, paste0('ankerparameters_', jaar, '.csv'), row.names = FALSE, quote = FALSE) # Alleen gezamenlijk anker
+write.csv2(rbind(anker_parameters, nieuw_anker[nieuw_anker$n_aanbieder > 1, colnames(anker_parameters)]), file.path(output_folder, paste0('ankerparameters_', jaar, '.csv')), row.names = FALSE, quote = FALSE) # Alleen gezamenlijk anker
