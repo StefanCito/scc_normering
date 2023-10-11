@@ -10,7 +10,7 @@ De verschillende analysescripts worden in deze volgorde uitgevoerd:
 In deze volgorde is alle code uit te voeren op basis van de dummy-dataset.
 
 De volgende hulpbestanden worden hierbij gebruikt:
-- `normeringsgegevens_dummy.xlsx` - normeringsgegevens zoals cesuren, onderdeelgewichten, enzovoorts (dummy)
+- `normeringsgegevens_2024.xlsx` - cesuren en onderdeelgewichten zoals geldig in 2024
 - `ankerparameters_2023.xlsx` - bestaande parameters gezamenlijk anker gebaseerd op de geharmoniseerde normering
 - `anker_off.csv` - uitgeschakelde of losgekoppelde gezamenlijk ankeritems in huidige uitgavejaar
 

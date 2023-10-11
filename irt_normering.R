@@ -45,7 +45,7 @@ anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
 items_off_file = 'anker_off.csv'
 
 # Bestand met cesuren en onderdeelgewichten, bevat tabbladen ref_cesuren, toetsadvies_cesuren en onderdeelgewichten
-normeringsgegevens_file = 'normeringsgegevens_dummy.xlsx'
+normeringsgegevens_file = 'normeringsgegevens_2024.xlsx'
 
 # Output folder
 output_folder = 'dummy_resultaten'
@@ -74,7 +74,6 @@ if (!all(items_off$actie %in% c('los', 'uit'))) {
 # Lees normeringsgegevens in
 ref_cesuren = openxlsx::read.xlsx(normeringsgegevens_file, 'ref_cesuren')
 toetsadvies_cesuren = openxlsx::read.xlsx(normeringsgegevens_file, 'toetsadvies_cesuren')
-toetsadvies_cesuren = toetsadvies_cesuren[, colnames(toetsadvies_cesuren) != 'cesuur_standaardscore']
 onderdeelgewichten = openxlsx::read.xlsx(normeringsgegevens_file, 'onderdeelgewichten')
 onderdeelgewichten = onderdeelgewichten[names(onderdeelgewichten) != 'totaal']
 

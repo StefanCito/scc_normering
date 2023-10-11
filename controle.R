@@ -17,7 +17,7 @@ data_folder = 'dummy_data'
 anker_file = 'ankerparameters_2023.csv'
 
 # Bestand met onderdeelgewichten, bevat tabbladen onderdeelgewichten
-normeringsgegevens_file = 'normeringsgegevens_dummy.xlsx'
+normeringsgegevens_file = 'normeringsgegevens_2024.xlsx'
 
 # Code ====================================================
 
