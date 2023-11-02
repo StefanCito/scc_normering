@@ -33,16 +33,19 @@
 # - Leerlingdata (TOETS_leerlingen.csv)
 # - Scoredata per onderdeel (TOETS_ONDERDEEL.csv)
 # - Optioneel noscore-items (TOETS_noscore.csv)
-data_folder = 'dummy_data'
+# data_folder = 'dummy_data'
+data_folder = 'C:/Documents/SCC/2023/Campagne/Data_normering'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
 populatie_aanbieders = NULL
 
 # Bestand met bestaande gezamenlijk ankerparameters (uitvoer van kalibreer_anker.R)
-anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
+# anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
+anker_file = 'ankerparameters_2023.csv'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
-items_off_file = 'anker_off.csv'
+# items_off_file = 'anker_off.csv'
+items_off_file = 'C:/Documents/SCC/2023/Campagne/anker_off.csv'
 
 # Bestand met cesuren en onderdeelgewichten, bevat tabbladen ref_cesuren, toetsadvies_cesuren en onderdeelgewichten
 normeringsgegevens_file = 'normeringsgegevens_2024.xlsx'
@@ -155,14 +158,14 @@ for (leerling_file in leerling_files) {
                         'n' = nrow(x)))
     })
 
-    # Haal items eruit met maar 1 score-categorie, dit gaat niet goed in de kalibratie, hou ook minimum van 150 observaties aan
-    cal_data = cal_data[cal_data[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 150, 'item_id'], ]
+    # Haal items eruit met maar 1 score-categorie, dit gaat niet goed in de kalibratie, hou ook minimum van 200 observaties aan
+    cal_data = cal_data[cal_data[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 200, 'item_id'], ]
 
     message('    Bezig met initiele 2pl-kalibratie')
 
     # Initiele kalibratie om slechte items eruit te gooien
     fixed_parameters = anker_parameters[anker_parameters[, 'onderdeel'] == onderdeel &
-                                        anker_parameters[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 &score_categories[, 'n'] > 150, 'item_id'], ]
+                                        anker_parameters[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 &score_categories[, 'n'] > 200, 'item_id'], ]
     if (nrow(fixed_parameters) == 0) {
       fixed_parameters = NULL
     }

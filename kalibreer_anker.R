@@ -141,8 +141,8 @@ for (onderdeel in referentieonderdelen) {
                       'aanbieder' = paste(unique(x$aanbieder), collapse = ';')))
   })
 
-  # Haal items eruit met maar 1 score-categorie, dit vindt Dexter niet leuk, hou ook minimum van 150 observaties aan
-  onderdeel_scores = onderdeel_scores[onderdeel_scores[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 150, 'item_id'], ]
+  # Haal items eruit met maar 1 score-categorie, dit vindt Dexter niet leuk, hou ook minimum van 200 observaties aan
+  onderdeel_scores = onderdeel_scores[onderdeel_scores[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 200, 'item_id'], ]
 
   message('Bezig met initiele 2pl-kalibratie')
 
