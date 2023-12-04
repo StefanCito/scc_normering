@@ -33,19 +33,16 @@
 # - Leerlingdata (TOETS_leerlingen.csv)
 # - Scoredata per onderdeel (TOETS_ONDERDEEL.csv)
 # - Optioneel noscore-items (TOETS_noscore.csv)
-# data_folder = 'dummy_data'
-data_folder = 'C:/Documents/SCC/2023/Campagne/Data_normering'
+data_folder = 'dummy_data'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
 populatie_aanbieders = NULL
 
 # Bestand met bestaande gezamenlijk ankerparameters (uitvoer van kalibreer_anker.R)
-# anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
-anker_file = 'ankerparameters_2023.csv'
+anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
-# items_off_file = 'anker_off.csv'
-items_off_file = 'C:/Documents/SCC/2023/Campagne/anker_off.csv'
+items_off_file = 'anker_off.csv'
 
 # Bestand met cesuren en onderdeelgewichten, bevat tabbladen ref_cesuren, toetsadvies_cesuren en onderdeelgewichten
 normeringsgegevens_file = 'normeringsgegevens_2024.xlsx'
