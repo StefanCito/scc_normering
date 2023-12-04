@@ -243,7 +243,7 @@ for (leerling_file in leerling_files) {
   colnames(cor_matrix) = gsub('theta_', '', colnames(cor_matrix))
   rownames(cor_matrix) = gsub('theta_', '', rownames(cor_matrix))
   if (any(cor_matrix < 0.4)) {
-    warning(paste0('Er waren correlaties tussen onderdelen lager dan 0.4 bij ', aanbieder, ' in het ', model, ' model.'))
+    warning(paste0('Er waren correlaties tussen onderdelen lager dan 0.4 bij ', aanbieder, '.'))
   } 
   openxlsx::writeData(wb, aanbieder, as.data.frame(cor_matrix), borders = 'none', rowNames = TRUE)
 
@@ -263,8 +263,6 @@ for (leerling_file in leerling_files) {
   toetsadviezen_behaald$aanbieder = aanbieder
 
   aanbieder_toetsadviezen = rbind(aanbieder_toetsadviezen, toetsadviezen_behaald[, colnames(toetsadviezen_behaald) != 'n'])
-
-  # aanbieder_toetsadviezen = reshape(aanbieder_toetsadviezen, idvar = c('aanbieder', 'toetsadvies'), timevar = 'model', direction = 'wide', sep = '_')
   aanbieder_toetsadviezen = aanbieder_toetsadviezen[order(match(aanbieder_toetsadviezen$toetsadvies, toetsadviezen)), c('aanbieder', 'toetsadvies', 'perc_behaald')]
 
   # Vanaf hier genereren we output
