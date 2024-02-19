@@ -134,11 +134,11 @@ for (onderdeel in referentieonderdelen) {
 
   onderdeel_scores = dplyr::bind_rows(onderdeel_scores)
 
-  # Kijk aantal score-categorieen per item, schrijf ook aanbieder weg zodat we items kunnen thuisbrengen bij verwijderde items
+  # Kijk aantal score-categorieen per item, schrijf ook aanbieder weg zodat we items kunnen thuisbrengen bij verwijderde aanbieders
   score_categories = plyr::ddply(onderdeel_scores, 'item_id', function(x) {
     return(data.frame('ncat' = length(unique(x$item_score)),
                       'n' = nrow(x),
-                      'aanbieder' = paste(unique(x$aanbieder), collapse = ';')))
+                      'aanbieder' = paste(unique(x$aanbieder), collapse = ',')))
   })
 
   # Haal items eruit met maar 1 score-categorie, dit vindt Dexter niet leuk, hou ook minimum van 200 observaties aan
