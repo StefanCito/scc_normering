@@ -198,7 +198,7 @@ parameters = dplyr::bind_rows(all_parameters)
 write.csv2(parameters, file.path(output_folder, 'ankerkalibratie_itemparameters.csv'), row.names = FALSE, quote = FALSE) # Alle itemparameters (diagnostisch)
 
 nieuw_anker = parameters[grepl('^Ank', parameters[, 'item_id']) & !parameters[, 'item_id'] %in% anker_parameters$item_id, ]
-nieuw_anker$n_aanbieder = stringr::str_count(nieuw_anker$aanbieder, ';') + 1
+nieuw_anker$n_aanbieder = stringr::str_count(nieuw_anker$aanbieder, ',') + 1
 
 if (nrow(nieuw_anker) > 0) {
   message(paste0('De volgende nieuwe gezamenlijk ankeritems zijn gevonden:\n', paste(nieuw_anker$item_id, collapse = '\n')))
