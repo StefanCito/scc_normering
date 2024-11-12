@@ -162,7 +162,7 @@ for (leerling_file in leerling_files) {
 
     # Initiele kalibratie om slechte items eruit te gooien
     fixed_parameters = anker_parameters[anker_parameters[, 'onderdeel'] == onderdeel &
-                                        anker_parameters[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 &score_categories[, 'n'] > 200, 'item_id'], ]
+                                        anker_parameters[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 200, 'item_id'], ]
     if (nrow(fixed_parameters) == 0) {
       fixed_parameters = NULL
     }
