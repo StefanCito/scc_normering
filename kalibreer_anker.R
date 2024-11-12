@@ -32,7 +32,7 @@
 data_folder = 'dummy_data'
 
 # Bestand met bestaande gezamenlijk ankerparameters
-anker_file = 'ankerparameters_2023.csv'
+anker_file = 'ankerparameters_2024.csv'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
 items_off_file = 'anker_off.csv'
@@ -44,7 +44,7 @@ populatie_aanbieders = NULL
 output_folder = 'dummy_resultaten'
 
 # Huidig afnamejaar
-jaar = 2024
+jaar = 2025
 
 # Code ====================================================
 

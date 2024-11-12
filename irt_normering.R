@@ -32,20 +32,19 @@
 # De volgende databestanden worden verwacht per toetsaanbieder:
 # - Leerlingdata (TOETS_leerlingen.csv)
 # - Scoredata per onderdeel (TOETS_ONDERDEEL.csv)
-# - Optioneel noscore-items (TOETS_noscore.csv)
 data_folder = 'dummy_data'
 
 # Aanbieders waar we rekening houden met verschillende MML-populaties
 populatie_aanbieders = NULL
 
 # Bestand met bestaande gezamenlijk ankerparameters (uitvoer van kalibreer_anker.R)
-anker_file = 'dummy_resultaten/ankerparameters_2024.csv'
+anker_file = 'dummy_resultaten/ankerparameters_2025.csv'
 
 # Bestand met uitgeschakelde en losgekoppelde ankeritems, bevat kolommen aanbieder, item_id, onderdeel en actie (los of uit)
 items_off_file = 'anker_off.csv'
 
 # Bestand met cesuren en onderdeelgewichten, bevat tabbladen ref_cesuren, toetsadvies_cesuren en onderdeelgewichten
-normeringsgegevens_file = 'normeringsgegevens_2024.xlsx'
+normeringsgegevens_file = 'normeringsgegevens_2025.xlsx'
 
 # Output folder
 output_folder = 'dummy_resultaten'
@@ -59,7 +58,6 @@ options(width = 200)
 leerling_files = list.files(path = data_folder, pattern = '_leerlingen.csv')
 onderdeel_files = list.files(path = data_folder, pattern = '.csv')
 onderdeel_files = onderdeel_files[!grepl('leerlingen|controle|representiviteit|representativiteit', onderdeel_files)]
-noscore_files = list.files(path = data_folder, pattern = '_noscore.dat')
 
 # Lees parameters gezamenlijk anker in
 anker_parameters = read.csv2(anker_file)
@@ -99,12 +97,6 @@ for (leerling_file in leerling_files) {
   } 
   leerlingen = leerlingen[, c('person_id', 'schooltype', 'populatie', 'schooladvies')]
 
-  # Lees noscore-items in indien nodig
-  noscore_items = NULL
-  if (length(noscore_files[grepl(aanbieder, noscore_files)]) > 0) {
-    noscore_items = readLines(file.path(data_folder, noscore_files[grepl(aanbieder, noscore_files)]))
-  }
-
   # Sheet voor correlaties
   openxlsx::addWorksheet(wb, aanbieder)
   wb_rows = 1
@@ -140,9 +132,6 @@ for (leerling_file in leerling_files) {
     # Koppel eventueel ook ankeritems los
     for (item_id in items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'los', 'item_id']) {
       score_data[score_data[, 'item_id'] == item_id, 'item_id'] = paste0('x', item_id, '_', aanbieder)
-      if (item_id %in% noscore_items) {
-        noscore_items[noscore_items == item_id] = paste0('x', item_id, '_', aanbieder) # Zorg ook dat dit met de noscore-items goed gaat
-      }
     }
 
     # Voeg persoonsparameters toe en maak kalibratiedata
@@ -196,11 +185,6 @@ for (leerling_file in leerling_files) {
 
     # Maak data voor vaardigheidsschatting, alleen met items die we hebben kunnen kalibreren maar nu inclusief alle onderwijstypen
     ability_data = score_data[score_data[, 'item_id'] %in% parameters$item_id, ]
-
-    # Verwijder noscore-items indien nodig
-    if (!is.null(noscore_items)) {
-      ability_data = ability_data[!ability_data[, 'item_id'] %in% noscore_items, ]
-    }
 
     # Vaardigheidsschatter
     abilities = as.data.frame(dexterMML::ability.mml(ability_data, parms = parameters, method = 'WLE'))
