@@ -159,8 +159,8 @@ for (leerling_file in leerling_files) {
 
     parameters = as.data.frame(coef(cal))
 
-    # Verwijder items met discriminatieparameter lager dan 0.1
-    remove_items = parameters[parameters[, 'alpha'] < 0.1, ]
+    # Verwijder items met discriminatieparameter lager dan 0.1 of hoger dan 10
+    remove_items = parameters[parameters[, 'alpha'] < 0.1 | parameters[, 'alpha'] > 10, ]
     if (nrow(remove_items) > 0) {
       remove_items$onderdeel = onderdeel
       remove_items = remove_items[, c('item_id', 'onderdeel', colnames(remove_items)[!colnames(remove_items) %in% c('item_id', 'onderdeel')])] # Sorteer kolommen
