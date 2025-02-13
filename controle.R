@@ -47,7 +47,7 @@ for (leerling_file in leerling_files) {
   leerlingen = read.csv2(file.path(data_folder, leerling_file))
 
   # Zijn de juiste kolommen aanwezig in leerlingenbestand?
-  if (!all(c('person_id', 'schooltype', 'schooladvies') %in% colnames(leerlingen))) {
+  if (!all(c('person_id', 'schooltype', 'schoolcode', 'schooladvies') %in% colnames(leerlingen))) {
     warning(paste0('Niet alle verplichte kolomnamen zijn aanwezig in leerlingbestand ', aanbieder, '. Aanwezig zijn: ', paste(colnames(leerlingen), collapse = ', ')))
   }
 
@@ -61,6 +61,12 @@ for (leerling_file in leerling_files) {
   # Komen de juiste schooltypes voor?
   if (!all(leerlingen$schooltype %in% 1:4)) {
     warning(paste0('Niet alle schooltypes in het leerlingbestand zijn toegestane waarden. Aanwezig zijn: ', paste(unique(leerlingen$schooltype), collapse = ', ')))
+  }
+
+  # Zijn er schoolcodes die niet aan de voorschriften voldoen?
+  wrong_schoolcode = unique(leerlingen[!grepl('^\\d\\d\\D\\D\\d\\d$', leerlingen$schoolcode) & leerlingen$schoolcode != '<5', 'schoolcode'])
+  if (length(wrong_schoolcode) > 0) {
+    warning(paste0('Er waren schoolcodes die niet voldoen aan de specificatie, namelijk: ', paste(wrong_schoolcode, collapse = '\n')))
   }
 
   # Kijk of er scorebestanden zijn van alle onderdelen die verwacht worden
