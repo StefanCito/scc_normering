@@ -86,13 +86,13 @@ for (leerling_file in leerling_files) {
     score_data = read.csv2(file.path(data_folder, onderdeel_file), check.names = FALSE)
 
     # Zijn alle leerlingen in de score opgenomen in de leerlingen?
-    missing_leerlingen = score_data[!score_data$person_id %in% leerlingen$person_id, 'person_id']
+    missing_leerlingen = unique(score_data[!score_data$person_id %in% leerlingen$person_id, 'person_id'])
     if (length(missing_leerlingen) > 0) {
       warning(paste0('In onderdeelbestand ', onderdeel_file, ' zitten ', length(missing_leerlingen), ' leerlingen die niet in het leerlingenbestand zitten, namelijk (eerste 20):\n', paste(head(missing_leerlingen, 20), collapse = '\n')))
     }
 
     # Zijn alle leerlingen uit leerlingen opgenomen in score?
-    missing_leerlingen = leerlingen[!leerlingen$person_id %in% score_data$person_id, 'person_id']
+    missing_leerlingen = unique(leerlingen[!leerlingen$person_id %in% score_data$person_id, 'person_id'])
     if (length(missing_leerlingen) > 0) {
       warning(paste0('In het leerlingenbestand van ', aanbieder, ' zitten ', length(missing_leerlingen), ' leerlingen die niet in onderdeelbestand ', onderdeel_file, ' zitten, namelijk (eerste 20):\n', paste(head(missing_leerlingen, 20), collapse = '\n')))
     }
