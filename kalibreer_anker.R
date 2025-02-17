@@ -153,7 +153,7 @@ for (onderdeel in referentieonderdelen) {
   parameters = as.data.frame(coef(cal))
 
   # Verwijder items met discriminatieparameter lager dan 0.1 of hoger dan 10
-  remove_items = parameters[parameters[, 'alpha'] < 0.1 | parameters[, 'alpha'] > 10, ]
+  remove_items = parameters[(parameters[, 'alpha'] < 0.1 | parameters[, 'alpha'] > 10) & (!parameters[, 'item_id'] %in% anker_parameters$item_id & !grepl('^A', parameters[, 'item_id'])), ]
   if (nrow(remove_items) > 0) {
     remove_items$onderdeel = onderdeel
     remove_items = dplyr::left_join(remove_items, score_categories[, c('item_id', 'aanbieder')], by = 'item_id')
