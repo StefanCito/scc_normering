@@ -57,7 +57,7 @@ options(width = 200)
 # Inventariseer alle bestanden
 leerling_files = list.files(path = data_folder, pattern = '_leerlingen.csv')
 onderdeel_files = list.files(path = data_folder, pattern = '.csv')
-onderdeel_files = onderdeel_files[!grepl('leerlingen|controle|representiviteit|representativiteit', onderdeel_files)]
+onderdeel_files = onderdeel_files[!grepl('leerlingen|controle|repr', onderdeel_files)]
 
 # Lees parameters gezamenlijk anker in
 anker_parameters = read.csv2(anker_file)
@@ -65,8 +65,8 @@ anker_parameters = read.csv2(anker_file)
 items_off = read.csv2(items_off_file)
 
 # Check op items_off
-if (!all(items_off$actie %in% c('los', 'uit'))) {
-  warning(paste0('Niet alle acties in het bestand met uitgeschakelde items zijn gelijk aan "los" of "uit"'))
+if (!all(items_off$actie %in% c('los', 'uit', 'drift'))) {
+  warning(paste0('Niet alle acties in het bestand met uitgeschakelde items zijn gelijk aan "los", "uit" of "drift"'))
 }
 
 # Lees normeringsgegevens in
