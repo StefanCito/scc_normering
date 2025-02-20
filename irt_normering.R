@@ -127,10 +127,10 @@ for (leerling_file in leerling_files) {
     score_data = score_data[!is.na(score_data$item_score) & score_data$item_score != 9, ]
 
     # Verwijder uitgeschakelde ankeritems
-    score_data = score_data[!score_data[, 'item_id'] %in% items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'uit', 'item_id'], ]
+    score_data = score_data[!score_data[, 'item_id'] %in% items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] %in% c(aanbieder, 'alle') & items_off[, 'actie'] == 'uit', 'item_id'], ]
 
     # Koppel eventueel ook ankeritems los
-    for (item_id in items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] == aanbieder & items_off[, 'actie'] == 'los', 'item_id']) {
+    for (item_id in items_off[items_off[, 'onderdeel'] == onderdeel & items_off[, 'aanbieder'] %in% c(aanbieder, 'alle') & items_off[, 'actie'] == 'los', 'item_id']) {
       score_data[score_data[, 'item_id'] == item_id, 'item_id'] = paste0('x', item_id, '_', aanbieder)
     }
 
