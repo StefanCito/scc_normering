@@ -14,7 +14,7 @@
 data_folder = 'dummy_data'
 
 # Bestand met bestaande gezamenlijk ankerparameters
-anker_file = 'ankerparameters_2024.csv'
+anker_file = 'ankerparameters_2025.csv'
 
 # Code ====================================================
 
