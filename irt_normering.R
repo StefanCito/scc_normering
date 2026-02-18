@@ -162,7 +162,7 @@ for (leerling_file in leerling_files) {
     })
 
     # Haal items eruit met maar 1 score-categorie, dit gaat niet goed in de kalibratie, hou ook minimum van 200 observaties aan
-    cal_data = cal_data[cal_data[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] > 200, 'item_id'], ]
+    cal_data = cal_data[cal_data[, 'item_id'] %in% score_categories[score_categories[, 'ncat'] > 1 & score_categories[, 'n'] >= 200, 'item_id'], ]
 
     message('    Bezig met initiele 2pl-kalibratie')
 
@@ -172,12 +172,12 @@ for (leerling_file in leerling_files) {
     if (nrow(fixed_parameters) == 0) {
       fixed_parameters = NULL
     }
-    cal = dexterMML::fit_2pl(cal_data, fixed_param = fixed_parameters, group = 'populatie')
+    cal = dexterMML::fit_2pl(cal_data, fixed_param = fixed_parameters, group = 'populatie', se = FALSE)
 
     parameters = as.data.frame(coef(cal))
 
     # Verwijder items met discriminatieparameter lager dan 0.1 of hoger dan 10
-    remove_items = parameters[parameters[, 'alpha'] < 0.1 | parameters[, 'alpha'] > 10, ]
+    remove_items = parameters[parameters[, 'alpha'] < 0.1 | parameters[, 'alpha'] > 10 | parameters[, 'beta'] < -10 | parameters[, 'beta'] > 10, ]
     if (nrow(remove_items) > 0) {
       remove_items$onderdeel = onderdeel
       remove_items = remove_items[, c('item_id', 'onderdeel', colnames(remove_items)[!colnames(remove_items) %in% c('item_id', 'onderdeel')])] # Sorteer kolommen
